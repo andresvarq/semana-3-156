@@ -1,10 +1,10 @@
-const models = require('../models');
+const model = require('../models');
 var bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.signin = async(req, res, next) => {
     try {
-        const user = await models.model.findOne({where: {email: req.body.email}});
+        const user = await model.user.findOne({where: {email: req.body.email}});
         if(user) {
             const validPassword = bcrypt.compareSync(req.body.password, user.password);
             if(validPassword) {

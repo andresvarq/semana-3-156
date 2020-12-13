@@ -5,13 +5,13 @@ var bcrypt = require('bcryptjs');
 
 
 router.get('/', async(req, res) => {
-    const user = await model.findAll();
+    const user = await model.user.findAll();
     res.status(200).json(user);
 });
 
 router.post('/register', async(req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 10);
-    const user = await model.create(req.body);
+    const user = await model.user.create(req.body);
     res.status(200).json(user);
 });
 
