@@ -1,41 +1,38 @@
-const model = require('../models');
+const config = require('../secret/config.js');
+const db = require('../models');
+var jwt = require('jsonwebtoken');
 var bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
-exports.signin = async(req, res, next) => {
-    try {
-        const user = await model.user.findOne({where: {email: req.body.email}});
-        if(user) {
-            const validPassword = bcrypt.compareSync(req.body.password, user.password);
-            if(validPassword) {
-                const token = jwt.sign({
-                    id: user.id,
-                    user: user.username,
-                    email: user.email,
-                    rol: user.rol
-                }, 'config.secret', {
-                    expiresIn: 86400,
-                }
-                );
-                res.status(200).json({
-                    auth: true,
-                    tokenReturn: token,
-                    user: user
-                })
-            } else {
-                res.status(401).json({
-                    error: 'Que pasa papi, algo no está bien'
-                })
-            }
-        } else {
-            res.status(404).json({
-                error: 'Que pasa papi, algo no está bien'
-            })
+
+exports.signin = (req, res) => {
+    db.user.findOne({
+        where: {
+            email: req.body.email
         }
-    } catch(error) {
-        res.status(505).send({
-            message: 'Paila'
-        }),
-        next();
-    }
-};
+    }).then(user => {
+        if (!user) {
+            return res.status(404).send('User Not Found.');
+        }
+        var passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
+        if (!passwordIsValid) {
+            return res.status(401).send({
+                auth: false,
+                accessToken: null,
+                reason: "Invalid Password!"
+            });
+        }
+        var token = jwt.sign({
+            id: user.id,
+            name: user.name,
+            email: user.email
+        }, config.secret, {
+            expiresIn: 86400 // expires in 24 hours
+        });
+        res.status(200).send({
+            auth: true,
+            accessToken: token
+        });
+    }).catch(err => {
+        res.status(500).send('Error -> ' + err);
+    });
+}
